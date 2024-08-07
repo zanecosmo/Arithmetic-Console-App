@@ -1,0 +1,48 @@
+{
+  "name": "arithmetic-console-app",
+  "version": "1.0.0",
+  "description": "app to practice simple math problems",
+  "main": "output/index.js",
+  "scripts": {
+    "test": "test",
+    "dev": "nodemon --no-stdin",
+    "dev:js": "node ./dist/index.js",
+    "compile": "npx tsc"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      ".git",
+      "node_modules/**/node_modules"
+    ],
+    "verbose": true,
+    "ext": "ts js json pug",
+    "watch": [
+      "src"
+    ],
+    "execMap": {
+      "ts": "ts-node"
+    },
+    "exec": "node -r ts-node/register ./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/zanecosmo/Arithmetic-Console-App.git"
+  },
+  "author": "Zane Gray",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/zanecosmo/Arithmetic-Console-App/issues"
+  },
+  "homepage": "https://github.com/zanecosmo/Arithmetic-Console-App#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^5.3.6",
+    "@types/node": "^22.1.0",
+    "chalk": "^4.1.0",
+    "inquirer": "^10.1.6"
+  }
+}
