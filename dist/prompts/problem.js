@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.displayProblems = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const menuModule_1 = require("../menuModule");
+const post_trial_1 = require("./post-trial");
 const operations = {
     ["+"]: (operands) => operands[0] + operands[1],
     ["-"]: (operands) => operands[0] - operands[1],
@@ -22,12 +23,16 @@ const operations = {
     ["/"]: (operands) => operands[0] / operands[1],
 };
 const digitCount = (num) => Math.max(Math.floor(Math.log10(Math.abs(num))), 0) + 1;
-const getRandomInt = (max) => Math.floor(Math.random() * (max - 1)) + 1;
+const getRandomInt = (max) => Math.floor(Math.random() * (max)) + 1;
 const chooseOperation = (trial) => trial.operations[getRandomInt(trial.operations.length) - 1];
 const executeOperation = (operands, operation) => operations[operation](operands);
 const generateOperands = (maxDigitCount) => {
     const maxSize = (10 ** maxDigitCount) - 1;
-    return [getRandomInt(maxSize), getRandomInt(maxSize)];
+    const operand1 = getRandomInt(maxSize);
+    const operand2 = getRandomInt(maxSize);
+    const larger = Math.max(operand1, operand2);
+    const smaller = Math.min(operand1, operand2);
+    return [larger, smaller];
 };
 const generateProblem = (trial) => {
     const operands = generateOperands(trial.maxDigitCount);
@@ -52,17 +57,15 @@ const renderProblem = (problem) => {
     const digits2 = digitCount(problem.operands[1]);
     const longerNumber = Math.max(digits1, digits2);
     const shorterNumber = Math.min(digits1, digits2);
-    const largerNumber = Math.max(problem.operands[0], problem.operands[1]);
-    const smallerNumber = Math.min(problem.operands[0], problem.operands[1]);
     const difference = longerNumber - shorterNumber;
     console.log("");
-    console.log("    " + largerNumber);
+    console.log("    " + problem.operands[0]);
     let spacer = " ";
     for (let i = 0; i < difference; i++) {
         spacer += " ";
     }
     ;
-    console.log("  " + problem.operation + spacer + smallerNumber);
+    console.log("  " + problem.operation + spacer + problem.operands[1]);
     let seperator = "  -";
     for (let i = 0; i <= longerNumber; i++) {
         seperator += "-";
@@ -79,13 +82,28 @@ const displayProblems = () => __awaiter(void 0, void 0, void 0, function* () {
     while (menuModule_1.trial.timerId !== undefined) {
         const problem = generateProblem(menuModule_1.trial);
         renderProblem(problem);
-        const submission = yield menuModule_1.rl.question(">  ");
-        validate(submission);
-        if (validationMessage !== null)
-            continue;
-        problem.submission = Number(submission);
-        problem.finishTimeSeconds = menuModule_1.trial.currentTimeSeconds;
-        menuModule_1.trial.problems.push(problem);
+        try {
+            const submission = yield menuModule_1.rl.question(">  ", { signal: menuModule_1.aborter.signal });
+            validate(submission);
+            if (validationMessage !== null)
+                continue;
+            problem.submission = Number(submission);
+            console.log(problem.answer === problem.submission ? chalk_1.default.green("CORRECT") : chalk_1.default.red("INCORRECT"));
+            console.log("Correct Answer: " + chalk_1.default.green(problem.answer));
+            console.log("Your Answer: " + (problem.answer === problem.submission ? chalk_1.default.green(problem.submission) : chalk_1.default.red(problem.submission)));
+            problem.finishTimeSeconds = menuModule_1.trial.currentTimeSeconds;
+            menuModule_1.trial.problems.push(problem);
+        }
+        catch (error) {
+            if (menuModule_1.aborter.signal.aborted) {
+                console.log("");
+                console.log("TIME LIMIT REACHED");
+                console.log("------------------");
+                (0, post_trial_1.displayPostTrialPrompt)();
+            }
+            ;
+        }
+        ;
     }
     ;
 });

@@ -1,3 +1,3 @@
-import { display } from "./prompts/operations";
+import { displayOperationsPrompt } from "./prompts/operations";
 
- display();  
+displayOperationsPrompt();  

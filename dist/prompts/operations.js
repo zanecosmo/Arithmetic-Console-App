@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.display = void 0;
+exports.displayOperationsPrompt = void 0;
 const readline = __importStar(require("node:readline"));
 const menuModule_1 = require("../menuModule");
 const digit_count_1 = require("./digit-count");
@@ -35,11 +35,11 @@ const operations = [
 ];
 let validationMessage = null;
 let pointer = 0;
-const display = () => {
+const displayOperationsPrompt = () => {
     initialize();
     renderPrompt();
 };
-exports.display = display;
+exports.displayOperationsPrompt = displayOperationsPrompt;
 const validateInput = () => {
     for (let operation in operations) {
         if (operations[operation].isSelected === true)
@@ -83,8 +83,11 @@ const updateMenuState = () => {
     ;
 };
 const keypressHandler = (_, key) => {
-    if (key && key.ctrl && key.name == 'c')
+    if (key && key.ctrl && key.name == 'c') {
+        process.stdout.write('\x1b[?25h'); // Show the cursor
         process.exit();
+    }
+    ;
     if (key && key.name === "up") {
         pointer = pointer === 0 ? 3 : pointer - 1;
     }

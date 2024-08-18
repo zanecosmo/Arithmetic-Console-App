@@ -22,7 +22,7 @@ const startTimer = (trial) => {
     trial.timerId = setInterval(() => {
         trial.currentTimeSeconds++;
         if (trial.currentTimeSeconds >= trial.timeLimitSeconds) {
-            console.log("TIME LIMIT REACHED");
+            menuModule_1.aborter.abort("timed-out");
             stopTimer(trial);
         }
         ;
@@ -34,6 +34,8 @@ const displayBeginTrialPrompt = () => __awaiter(void 0, void 0, void 0, function
     console.log(menuModule_1.trial.maxDigitCount);
     console.log(menuModule_1.trial.timeLimitSeconds);
     yield menuModule_1.rl.question("Press ENTER to begin. Press CTRL + C to quit.");
+    console.log(menuModule_1.trial.timerId);
+    (0, menuModule_1.resetAboter)();
     startTimer(menuModule_1.trial);
     (0, problem_1.displayProblems)();
 });

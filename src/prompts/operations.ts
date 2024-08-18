@@ -14,7 +14,7 @@ let validationMessage: string | null = null;
 
 let pointer: number = 0;
 
-export const display = () => {
+export const displayOperationsPrompt = () => {
   initialize();
   renderPrompt();
 };
@@ -64,7 +64,10 @@ const updateMenuState = () => {
 };
 
 const keypressHandler = (_: any, key: any) => {
-  if (key && key.ctrl && key.name == 'c') process.exit();
+  if (key && key.ctrl && key.name == 'c') {
+    process.stdout.write('\x1b[?25h'); // Show the cursor
+    process.exit();
+  };
 
   if (key && key.name === "up") {
     pointer = pointer === 0 ? 3 : pointer - 1;

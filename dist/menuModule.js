@@ -23,8 +23,18 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rl = exports.trial = void 0;
+exports.resetAboter = exports.aborter = exports.rl = exports.trial = exports.resetTrial = void 0;
 const readlinePromises = __importStar(require("node:readline/promises"));
+const resetTrial = () => exports.trial = {
+    operations: [],
+    maxDigitCount: 0,
+    timeLimitSeconds: 0,
+    currentTimeSeconds: 0,
+    hasCancelled: false,
+    problems: [],
+    timerId: undefined,
+};
+exports.resetTrial = resetTrial;
 exports.trial = {
     operations: [],
     maxDigitCount: 0,
@@ -35,3 +45,6 @@ exports.trial = {
     timerId: undefined,
 };
 exports.rl = readlinePromises.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
+exports.aborter = new AbortController();
+const resetAboter = () => exports.aborter = new AbortController();
+exports.resetAboter = resetAboter;

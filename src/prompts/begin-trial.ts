@@ -1,4 +1,4 @@
-import { trial, rl } from "../menuModule";
+import { trial, rl, aborter, resetAboter } from "../menuModule";
 import { Trial } from "../types";
 import { displayProblems } from "./problem";
 
@@ -12,7 +12,7 @@ const startTimer = (trial: Trial): void => {
   trial.timerId = setInterval(() => {
     trial.currentTimeSeconds++;
     if (trial.currentTimeSeconds >= trial.timeLimitSeconds) {
-      console.log("TIME LIMIT REACHED");
+      aborter.abort("timed-out");
       stopTimer(trial);
     };
   }, 1000);
@@ -27,6 +27,9 @@ export const displayBeginTrialPrompt = async (): Promise<void> => {
 
   await rl.question("Press ENTER to begin. Press CTRL + C to quit.");
 
+  console.log(trial.timerId);
+
+  resetAboter();
   startTimer(trial);
   displayProblems();
 };
