@@ -1,35 +1,11 @@
+import { Trial, OperationMenuState, MenuState, Operation } from "./types";
 import * as readline from "node:readline";
-
-type Operands = [number, number];
-
-interface Problem {
-    answer: number,
-    submission: number | null,
-    startTimeSeconds: number,
-    finishTimeSeconds: number | null,
-    operands: Operands,
-    operation: string
-};
-
-interface Trial {
-    operations: string[],
-    maxDigitCount: number,
-    timeLimitSeconds: number,
-    currentTimeSeconds: number,
-    hasCancelled: boolean,
-    problems: Problem[],
-    timerId: NodeJS.Timeout | undefined,
-};
+import { menuState } from "./menuState";
 
 readline.emitKeypressEvents(process.stdin);
-if (process.stdin.setRawMode != null) process.stdin.setRawMode(true)
+if (process.stdin.setRawMode != null) process.stdin.setRawMode(true);
 
 let pointer = 0;
-
-interface Operation {
-    symbol: string,
-    isSelected: boolean
-};
 
 const operations: Operation[] = [
     { symbol: "+", isSelected: false },
@@ -38,7 +14,7 @@ const operations: Operation[] = [
     { symbol: "/", isSelected: false }
 ];
 
-const renderMenu = () => {
+const renderMenu = (validationMessage: string | null) => {
     console.log("Choose Operations:")
 
     operations.forEach((operation, index) => {
@@ -55,28 +31,48 @@ const renderMenu = () => {
 
         console.log(line);
     });
+
+    if (validationMessage !== null) console.log(validationMessage);
 };
 
 process.on('uncaughtException', function (err) {
     console.log(err);
 });
 
-renderMenu();
+renderMenu(null);
 process.stdout.write('\x1b[?25l'); // Hide the cursor
 
-// const trial: Trial = {
-//     operations: [],
-//     maxDigitCount: 0,
-//     timeLimitSeconds: parseInt(await input(prompts.timeLimitSeconds)),
-//     currentTimeSeconds: 0,
-//     hasCancelled: false,
-//     problems: [],
-//     timerId: undefined,
-// };
+const trial: Trial = {
+    operations: [],
+    maxDigitCount: 0,
+    timeLimitSeconds: 0,
+    currentTimeSeconds: 0,
+    hasCancelled: false,
+    problems: [],
+    timerId: undefined,
+};
+
+const validateOperations = (operations: Operation[]): boolean => {
+    for (let operation in operations) {
+        if (operations[operation].isSelected === true) return true;
+    };
+
+    return false;
+};
+
+let rl: readline.Interface | null = null;
+rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+let validationMessage: string | null = null;
+
+// validation message, trial?
+// v
+// process, pointer, operations --- rl
+
+// process, pointer, operations, key, validation message
+
 
 const keypressHandler = (_: any, key: any) => {
-    console.log(key.name);
-
     if (key && key.ctrl && key.name == 'c') process.exit();
 
     if (key && key.name === "up") {
@@ -93,36 +89,111 @@ const keypressHandler = (_: any, key: any) => {
     }
 
     if (key && key.name === "return") {
-        // validate: must have at least one operation selected
-        // insert the operations into the trial
-        process.stdin.removeListener("keypress", keypressHandler);
-        console.log("listener removed");
-        process.stdin.setRawMode(false);
-        process.stdout.write('\x1b[?25h'); // Show the cursor
+        const operationSelected = validateOperations(operations);
 
-        return;
-    }
+        if (!operationSelected) validationMessage = "Must have at least one operation selected";
+
+        else {
+            validationMessage = null;
+            process.stdin.removeListener("keypress", keypressHandler);
+            process.stdin.setRawMode(false);
+            process.stdout.write('\x1b[?25h'); // Show the cursor
+
+            // insert the operations into the trial?
+            for (let operation in operations) {
+                if (operations[operation].isSelected) trial.operations.push(operations[operation].symbol);
+            }
+
+            // connect to stdin and as question/prompt
+            nextPrompt(validationMessage);
+
+            return;
+        };
+    };
 
     console.clear();
 
-    renderMenu();
-}
+    renderMenu(validationMessage);
+};
 
 process.stdin.addListener('keypress', keypressHandler);
 
-const nextPrompt = () => {
-    // add cursor back
+// rl, validation message, trial
+
+const nextPrompt = (validationMessage: string | null): void => {
+    console.clear();
+
+    console.log(trial.operations);
+
     process.stdout.write('\x1b[?25h'); // Show the cursor
 
-    // connect to stdin and as question/prompt
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    console.log("----");
+    if (validationMessage !== null) console.log(validationMessage);
+    console.log("----");
 
-    rl.question("Maximum Operand Size (number of digits)", (maxDigitCount) => {
+    if (rl === null) {
+        throw new Error("rl ain't workin'");
+    };
+
+    rl.question("Maximum Operand Size (number of digits): ", (maxDigitCount: string) => {
         // validate string it must be a number
-        // trial.maxDigitCount = parseInt(maxDigitCount);
+        // if it's invalid,
+        // clear console, set validation message to whatever
+        // call next prompt again
+        // return
+
+        trial.maxDigitCount = parseInt(maxDigitCount);
+        validationMessage = null;
+        timeLimitPrompt(validationMessage);
     });
 
-    // nextPrompt(); : "Time Limit (seconds)"
 };
 
+// rl, validation message, trial, 
 
+const timeLimitPrompt = (validationMessage: string | null): void => {
+    console.clear();
+
+    console.log(trial.operations);
+    console.log(trial.maxDigitCount);
+
+    if (validationMessage !== null) console.log(validationMessage);
+
+    if (rl === null) {
+        throw new Error("rl ain't workin'");
+    };
+
+    rl.question("Time limit in seconds: ", (timeLimitSeconds: string) => {
+        // validate string it must be a number
+        // if it's invalid,
+        // clear console, set validation message to whatever
+        // start trial
+        // return
+
+        trial.timeLimitSeconds = parseInt(timeLimitSeconds);
+        validationMessage = null;
+    });
+};
+
+// prompt: menu is a special case which requires override of readline, and takes keybord inputs.
+// it has a state for it's menu
+// it's state overrides the overarching trial state upon "return"
+// return also exits out of this prompt and goes to the next one
+
+interface IPrompt {
+    validationMessage: string | null,
+    validateInput: () => string | null,
+    display: () => void
+  };
+  
+  class DigitCountPrompt implements IPrompt {
+    validationMessage = "";
+  
+    validateInput() {
+      return "";
+    }
+  
+    display() {
+  
+    }
+  }

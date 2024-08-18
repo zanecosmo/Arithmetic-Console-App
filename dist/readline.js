@@ -24,20 +24,17 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const readline = __importStar(require("node:readline"));
-;
-;
 readline.emitKeypressEvents(process.stdin);
 if (process.stdin.setRawMode != null)
     process.stdin.setRawMode(true);
 let pointer = 0;
-;
 const operations = [
     { symbol: "+", isSelected: false },
     { symbol: "-", isSelected: false },
     { symbol: "*", isSelected: false },
     { symbol: "/", isSelected: false }
 ];
-const renderMenu = () => {
+const renderMenu = (validationMessage) => {
     console.log("Choose Operations:");
     operations.forEach((operation, index) => {
         let line = "";
@@ -49,23 +46,39 @@ const renderMenu = () => {
         line += operation.symbol;
         console.log(line);
     });
+    if (validationMessage !== null)
+        console.log(validationMessage);
 };
 process.on('uncaughtException', function (err) {
     console.log(err);
 });
-renderMenu();
+renderMenu(null);
 process.stdout.write('\x1b[?25l'); // Hide the cursor
-// const trial: Trial = {
-//     operations: [],
-//     maxDigitCount: 0,
-//     timeLimitSeconds: parseInt(await input(prompts.timeLimitSeconds)),
-//     currentTimeSeconds: 0,
-//     hasCancelled: false,
-//     problems: [],
-//     timerId: undefined,
-// };
+const trial = {
+    operations: [],
+    maxDigitCount: 0,
+    timeLimitSeconds: 0,
+    currentTimeSeconds: 0,
+    hasCancelled: false,
+    problems: [],
+    timerId: undefined,
+};
+const validateOperations = (operations) => {
+    for (let operation in operations) {
+        if (operations[operation].isSelected === true)
+            return true;
+    }
+    ;
+    return false;
+};
+let rl = null;
+rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+let validationMessage = null;
+// validation message, trial?
+// v
+// process, pointer, operations --- rl
+// process, pointer, operations, key, validation message
 const keypressHandler = (_, key) => {
-    console.log(key.name);
     if (key && key.ctrl && key.name == 'c')
         process.exit();
     if (key && key.name === "up") {
@@ -81,26 +94,83 @@ const keypressHandler = (_, key) => {
         operations[pointer].isSelected = !operations[pointer].isSelected;
     }
     if (key && key.name === "return") {
-        // validate: must have at least one operation selected
-        // insert the operations into the trial
-        process.stdin.removeListener("keypress", keypressHandler);
-        console.log("listener removed");
-        process.stdin.setRawMode(false);
-        process.stdout.write('\x1b[?25h'); // Show the cursor
-        return;
+        const operationSelected = validateOperations(operations);
+        if (!operationSelected)
+            validationMessage = "Must have at least one operation selected";
+        else {
+            validationMessage = null;
+            process.stdin.removeListener("keypress", keypressHandler);
+            process.stdin.setRawMode(false);
+            process.stdout.write('\x1b[?25h'); // Show the cursor
+            // insert the operations into the trial?
+            for (let operation in operations) {
+                if (operations[operation].isSelected)
+                    trial.operations.push(operations[operation].symbol);
+            }
+            // connect to stdin and as question/prompt
+            nextPrompt(validationMessage);
+            return;
+        }
+        ;
     }
+    ;
     console.clear();
-    renderMenu();
+    renderMenu(validationMessage);
 };
 process.stdin.addListener('keypress', keypressHandler);
-const nextPrompt = () => {
-    // add cursor back
+// rl, validation message, trial
+const nextPrompt = (validationMessage) => {
+    console.clear();
+    console.log(trial.operations);
     process.stdout.write('\x1b[?25h'); // Show the cursor
-    // connect to stdin and as question/prompt
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question("Maximum Operand Size (number of digits)", (maxDigitCount) => {
+    console.log("----");
+    if (validationMessage !== null)
+        console.log(validationMessage);
+    console.log("----");
+    if (rl === null) {
+        throw new Error("rl ain't workin'");
+    }
+    ;
+    rl.question("Maximum Operand Size (number of digits): ", (maxDigitCount) => {
         // validate string it must be a number
-        // trial.maxDigitCount = parseInt(maxDigitCount);
+        // if it's invalid,
+        // clear console, set validation message to whatever
+        // call next prompt again
+        // return
+        trial.maxDigitCount = parseInt(maxDigitCount);
+        validationMessage = null;
+        timeLimitPrompt(validationMessage);
     });
-    // nextPrompt(); : "Time Limit (seconds)"
 };
+// rl, validation message, trial, 
+const timeLimitPrompt = (validationMessage) => {
+    console.clear();
+    console.log(trial.operations);
+    console.log(trial.maxDigitCount);
+    if (validationMessage !== null)
+        console.log(validationMessage);
+    if (rl === null) {
+        throw new Error("rl ain't workin'");
+    }
+    ;
+    rl.question("Time limit in seconds: ", (timeLimitSeconds) => {
+        // validate string it must be a number
+        // if it's invalid,
+        // clear console, set validation message to whatever
+        // start trial
+        // return
+        trial.timeLimitSeconds = parseInt(timeLimitSeconds);
+        validationMessage = null;
+    });
+};
+;
+class DigitCountPrompt {
+    constructor() {
+        this.validationMessage = "";
+    }
+    validateInput() {
+        return "";
+    }
+    display() {
+    }
+}
